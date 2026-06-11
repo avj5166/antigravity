@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>France Journey Tracker — VA Consultancy</title>
+  <meta name="description" content="Track your France student visa journey in real time." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#2563eb" />
+
+  <!--
+  ═══════════════════════════════════════════════════════════════════════════
+  GOOGLE SHEETS SETUP — READ THIS FIRST
+  ═══════════════════════════════════════════════════════════════════════════
+
+  1. Open Google Sheets → create a new spreadsheet
+  2. Create 5 tabs with EXACT names (case-sensitive):
+       Students | Documents | Deadlines | Messages | Universities
+
+  3. Set up each tab — Row 1 is the header row:
+
+     ┌─ STUDENTS ──────────────────────────────────────────────────────┐
+     │ student_id | name | program | intake | enrollment_date         │
+     │ current_stage | counselor_name | phone                         │
+     │                                                                  │
+     │ Example row:                                                     │
+     │ priya-s | Priya Sharma | MSc Data Science | September 2026     │
+     │ 2026-04-21 | 9 | Aditya Jagadeesan | +91 98765 43210           │
+     └─────────────────────────────────────────────────────────────────┘
+
+     ┌─ DOCUMENTS ─────────────────────────────────────────────────────┐
+     │ student_id | doc_name | category | status | note               │
+     │                                                                  │
+     │ status values: needed / submitted / verified / issue           │
+     │ category values: academic / application / campus_france /      │
+     │                  financial                                      │
+     │                                                                  │
+     │ Example row:                                                     │
+     │ priya-s | 10th Marksheet & Certificate | academic | verified | │
+     └─────────────────────────────────────────────────────────────────┘
+
+     ┌─ DEADLINES ─────────────────────────────────────────────────────┐
+     │ student_id | label | date | urgency | done                     │
+     │                                                                  │
+     │ date format: YYYY-MM-DD                                         │
+     │ urgency values: red / amber / green                            │
+     │ done values: yes / no                                           │
+     │                                                                  │
+     │ Example row:                                                     │
+     │ priya-s | Bank Statement Upload | 2026-06-10 | red | no        │
+     └─────────────────────────────────────────────────────────────────┘
+
+     ┌─ MESSAGES ──────────────────────────────────────────────────────┐
+     │ student_id | message_text | date | pinned                      │
+     │                                                                  │
+     │ date format: YYYY-MM-DD                                         │
+     │ pinned values: yes / no  (latest pinned message shows at top)  │
+     │                                                                  │
+     │ Example row:                                                     │
+     │ priya-s | Campus France dossier submitted! Number CF-2026... | │
+     │ 2026-06-07 | yes                                                │
+     └─────────────────────────────────────────────────────────────────┘
+
+     ┌─ UNIVERSITIES ──────────────────────────────────────────────────┐
+     │ student_id | university_name | program | deadline | status     │
+     │ fee | tier                                                       │
+     │                                                                  │
+     │ status values: Applied / Awaiting / Not Applied /              │
+     │                Offer Received / Rejected                        │
+     │ tier values: S (safety) / T (target) / R (reach)               │
+     │                                                                  │
+     │ Example row:                                                     │
+     │ priya-s | Université de Bordeaux | MSc Data & AI | 2026-06-30 │
+     │ Applied | €3,770/year | S                                       │
+     └─────────────────────────────────────────────────────────────────┘
+
+  4. Share: Share button → Change to "Anyone with the link" → Viewer
+  5. Copy the Spreadsheet ID from the URL:
+       https://docs.google.com/spreadsheets/d/ *** THIS PART *** /edit
+  6. Paste it into SPREADSHEET_ID below.
+
+  PORTAL URL PER STUDENT:  index.html?student=STUDENT_ID
+  CONSULTANT VIEW:         consultant.html
+
+  ═══════════════════════════════════════════════════════════════════════════
+  -->
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #2563eb;
+      --blue-lt: #eff6ff;
+      --blue-md: #dbeafe;
+      --blue-dk: #1d4ed8;
+      --green:   #16a34a;
+      --green-lt:#f0fdf4;
+      --red:     #dc2626;
+      --red-lt:  #fef2f2;
+      --amber:   #d97706;
+      --amber-lt:#fffbeb;
+      --gray-50: #f9fafb;
+      --gray-100:#f3f4f6;
+      --gray-200:#e5e7eb;
+      --gray-300:#d1d5db;
+      --gray-400:#9ca3af;
+      --gray-500:#6b7280;
+      --gray-700:#374151;
+      --gray-900:#111827;
+      --text:    #1f2937;
+      --subtext: #6b7280;
+      --border:  #e5e7eb;
+      --shadow:  0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md:0 4px 6px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--gray-50); color: var(--text); line-height: 1.6; font-size: 15px;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { display: block; max-width: 100%; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--gray-100); }
+    ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 10px; }
+
+    nav {
+      background: #fff; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+      padding: 0 1.5rem; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; color: var(--gray-900); }
+    .nav-brand span { color: var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.82rem; }
+    .live-badge {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--green-lt); border: 1px solid #bbf7d0;
+      color: var(--green); padding: 4px 10px; border-radius: 100px;
+      font-weight: 600; font-size: 0.75rem;
+    }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .hero { background: #fff; border-bottom: 1px solid var(--border); padding: 2rem 1.5rem 1.5rem; }
+    .hero-inner { max-width: 900px; margin: 0 auto; }
+    .breadcrumb { font-size: 0.78rem; color: var(--subtext); margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+    .breadcrumb .sep { color: var(--gray-300); }
+    .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .hero-name { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 800; color: var(--gray-900); letter-spacing: -0.02em; line-height: 1.1; }
+    .hero-meta { font-size: 0.88rem; color: var(--subtext); margin-top: 0.35rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .hero-meta .sep { color: var(--gray-300); }
+    .hero-tag { background: var(--blue-lt); color: var(--blue); padding: 3px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; }
+    .stage-box { background: var(--blue-lt); border: 1px solid var(--blue-md); border-radius: 10px; padding: 0.85rem 1.2rem; text-align: right; min-width: 200px; }
+    .stage-box .slabel { font-size: 0.7rem; color: var(--blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+    .stage-box .sval { font-size: 0.9rem; font-weight: 700; color: var(--gray-900); margin-top: 2px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-top: 1.5rem; }
+    .stat-item { background: #fff; padding: 0.9rem 1rem; text-align: center; }
+    .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--blue); line-height: 1; }
+    .stat-label { font-size: 0.7rem; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; font-weight: 500; }
+    @media (max-width: 500px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+    .main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
+    .section { margin-bottom: 1.5rem; }
+    .section-head { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--subtext); margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; box-shadow: var(--shadow); }
+    .card + .card { margin-top: 1rem; }
+
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem; }
+    .progress-title { font-size: 0.95rem; font-weight: 700; }
+    .progress-pct { font-size: 0.85rem; font-weight: 700; color: var(--blue); }
+    .bar-track { background: var(--gray-100); border-radius: 100px; height: 8px; overflow: hidden; margin-bottom: 1.2rem; }
+    .bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--blue), #3b82f6); width: 0; transition: width 1s ease; }
+    .stages-wrap { overflow-x: auto; padding-bottom: 4px; }
+    .stages-row { display: flex; gap: 5px; min-width: max-content; }
+    .pill { display: flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 100px; font-size: 0.72rem; font-weight: 600; border: 1px solid transparent; white-space: nowrap; }
+    .pill-done { background: var(--green-lt); border-color: #bbf7d0; color: var(--green); }
+    .pill-active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .pill-next { background: var(--gray-100); border-color: var(--border); color: var(--gray-500); }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+    .counselor-strip { background: var(--blue-lt); border: 1px solid var(--blue-md); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .c-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .c-info { flex: 1; min-width: 160px; }
+    .c-name { font-weight: 700; font-size: 0.95rem; color: var(--gray-900); }
+    .c-title { font-size: 0.78rem; color: var(--subtext); }
+    .c-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .c-btn { padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; border: 1px solid var(--border); background: #fff; color: var(--gray-700); cursor: pointer; transition: background 0.15s, border-color 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+    .c-btn:hover { background: var(--gray-50); border-color: var(--gray-300); text-decoration: none; }
+    .c-btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .c-btn.primary:hover { background: var(--blue-dk); }
+
+    .action-list { display: flex; flex-direction: column; gap: 6px; }
+    .action-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; transition: border-color 0.15s, background 0.15s; }
+    .action-item:hover { border-color: var(--gray-300); background: var(--gray-50); }
+    .action-item.urgent { border-left: 3px solid var(--red); background: var(--red-lt); border-color: #fecaca; }
+    .action-item.done { opacity: 0.5; }
+    .chk { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--gray-300); flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #fff; background: #fff; transition: all 0.15s; }
+    .chk.chk-done { background: var(--green); border-color: var(--green); }
+    .chk.chk-urgent { border-color: var(--red); }
+    .action-text { font-size: 0.85rem; flex: 1; }
+    .tag { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 100px; flex-shrink: 0; letter-spacing: 0.04em; }
+    .tag-red   { background: var(--red-lt);   color: var(--red);   border: 1px solid #fecaca; }
+    .tag-amber { background: var(--amber-lt); color: var(--amber); border: 1px solid #fde68a; }
+    .tag-green { background: var(--green-lt); color: var(--green); border: 1px solid #bbf7d0; }
+    .tag-gray  { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--border); }
+
+    .deadline-list { display: flex; flex-direction: column; gap: 6px; }
+    .dl-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+    .dl-row.dl-red   { border-left: 3px solid var(--red);   background: var(--red-lt);   border-color: #fecaca; }
+    .dl-row.dl-amber { border-left: 3px solid var(--amber); background: var(--amber-lt); border-color: #fde68a; }
+    .dl-row.dl-green { border-left: 3px solid var(--green); background: var(--green-lt); border-color: #bbf7d0; }
+    .dl-row.dl-done  { opacity: 0.45; }
+    .dl-icon { font-size: 1rem; flex-shrink: 0; }
+    .dl-info { flex: 1; min-width: 0; }
+    .dl-name { font-size: 0.85rem; font-weight: 600; }
+    .dl-date { font-size: 0.75rem; color: var(--subtext); }
+    .dl-days { font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+
+    .uni-list { display: flex; flex-direction: column; gap: 6px; }
+    .uni-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; transition: border-color 0.15s; }
+    .uni-row:hover { border-color: var(--gray-300); }
+    .uni-badge { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0; }
+    .badge-s { background: var(--green-lt); color: var(--green); }
+    .badge-t { background: var(--blue-lt);  color: var(--blue); }
+    .badge-r { background: var(--amber-lt); color: var(--amber); }
+    .uni-info { flex: 1; min-width: 0; }
+    .uni-name { font-size: 0.87rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .uni-prog { font-size: 0.75rem; color: var(--subtext); }
+    .uni-dl   { font-size: 0.72rem; color: var(--subtext); }
+    .uni-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+    .u-status { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .us-applied  { background: var(--blue-lt);  color: var(--blue); }
+    .us-awaiting { background: var(--amber-lt); color: var(--amber); }
+    .us-pending  { background: var(--gray-100); color: var(--gray-500); }
+    .us-offer    { background: var(--green-lt); color: var(--green); }
+    .us-rejected { background: var(--red-lt);   color: var(--red); }
+    .u-fee { font-size: 0.72rem; color: var(--subtext); }
+
+    .doc-section { margin-bottom: 1rem; }
+    .doc-section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--subtext); padding: 0 2px; margin-bottom: 5px; }
+    .doc-list { display: flex; flex-direction: column; gap: 4px; }
+    .doc-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--gray-50); font-size: 0.82rem; }
+    .doc-row:hover { background: var(--gray-100); }
+    .doc-name { color: var(--gray-700); flex: 1; padding-right: 8px; }
+    .doc-status { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; letter-spacing: 0.04em; white-space: nowrap; }
+    .ds-verified { background: var(--green-lt); color: var(--green); }
+    .ds-submitted{ background: var(--blue-lt);  color: var(--blue); }
+    .ds-needed   { background: var(--gray-100); color: var(--gray-500); }
+    .ds-issue    { background: var(--red-lt);   color: var(--red); }
+
+    .msg-list { display: flex; flex-direction: column; gap: 10px; }
+    .msg-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .msg-header { background: var(--gray-50); border-bottom: 1px solid var(--border); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .msg-from { font-size: 0.8rem; font-weight: 700; color: var(--blue); }
+    .msg-date { font-size: 0.72rem; color: var(--subtext); }
+    .msg-body { padding: 10px 12px; font-size: 0.85rem; color: var(--gray-700); line-height: 1.65; }
+    .msg-body strong { color: var(--gray-900); }
+    .msg-pinned { background: #fffbeb; border-color: #fde68a; }
+    .msg-pinned .msg-header { background: #fef3c7; border-color: #fde68a; }
+    .pin-tag { font-size: 0.67rem; font-weight: 700; padding: 1px 7px; border-radius: 100px; background: #fde68a; color: #78350f; }
+
+    .resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+    .res-link { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 0.82rem; color: var(--gray-700); text-decoration: none; transition: border-color 0.15s, background 0.15s; }
+    .res-link:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); text-decoration: none; }
+    .res-link .ext { margin-left: auto; color: var(--gray-400); font-size: 0.7rem; }
+
+    /* Loading & error states */
+    .state-box { max-width: 900px; margin: 4rem auto; padding: 0 1.5rem; text-align: center; }
+    .state-box h2 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.5rem; }
+    .state-box p { font-size: 0.9rem; color: var(--subtext); }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--blue-md); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer { border-top: 1px solid var(--border); background: #fff; padding: 1.5rem; text-align: center; font-size: 0.78rem; color: var(--subtext); }
+    footer strong { color: var(--blue); }
+
+    @media print {
+      nav, .c-btns { display: none; }
+      body { background: #fff; font-size: 12px; }
+      .card { box-shadow: none; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">🇫🇷 <span>VA</span> Consultancy</div>
+  <div class="nav-right">
+    <div class="live-badge"><span class="live-dot"></span> Live Tracker</div>
+  </div>
+</nav>
+
+<div id="app-loading" class="state-box">
+  <div class="spinner"></div>
+  <h2>Loading your portal&hellip;</h2>
+  <p>Fetching your latest journey data.</p>
+</div>
+
+<div id="app-error" class="state-box" style="display:none">
+  <h2>⚠️ <span id="error-title">Something went wrong</span></h2>
+  <p id="error-msg">Please refresh or contact your counselor.</p>
+</div>
+
+<div id="app-content" style="display:none">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="breadcrumb">
+        <span>VA Consultancy</span><span class="sep">›</span>
+        <span>Student Portal</span><span class="sep">›</span>
+        <span id="bc-name">—</span>
+      </div>
+      <div class="hero-top">
+        <div>
+          <h1 class="hero-name" id="h-name">—</h1>
+          <div class="hero-meta">
+            <span id="h-program">—</span>
+            <span class="sep">·</span>
+            <span>France</span>
+            <span class="sep">·</span>
+            <span class="hero-tag" id="h-intake">—</span>
+          </div>
+        </div>
+        <div class="stage-box">
+          <div class="slabel">Current Stage</div>
+          <div class="sval" id="h-stage-name">—</div>
+          <div style="font-size:0.7rem;color:var(--subtext);margin-top:4px;" id="h-stage-sub">—</div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-item"><div class="stat-val" id="s-stage">—</div><div class="stat-label">Current Stage</div></div>
+        <div class="stat-item"><div class="stat-val" id="s-days">—</div><div class="stat-label">Days Active</div></div>
+        <div class="stat-item"><div class="stat-val" id="s-docs">—</div><div class="stat-label">Docs Submitted</div></div>
+        <div class="stat-item"><div class="stat-val" id="s-vfs">—</div><div class="stat-label">Days to VFS</div></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <div class="counselor-strip">
+      <div class="c-avatar" id="c-avatar">?</div>
+      <div class="c-info">
+        <div class="c-name" id="c-name">—</div>
+        <div class="c-title">France Visa Specialist · VA Consultancy, Ahmedabad</div>
+      </div>
+      <div class="c-btns">
+        <a class="c-btn primary" id="c-whatsapp" href="#" target="_blank">💬 WhatsApp</a>
+        <a class="c-btn" href="mailto:hello@vaconsultancy.in">✉️ Email</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Your France Journey — 22 Stages</div>
+      <div class="card">
+        <div class="progress-header">
+          <div class="progress-title">Overall Progress</div>
+          <div class="progress-pct" id="prog-pct">—</div>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
+        <div class="stages-wrap"><div class="stages-row" id="stages-row"></div></div>
+      </div>
+    </div>
+
+    <div class="section two-col">
+      <div>
+        <div class="section-head">Your Action Items</div>
+        <div class="card"><div class="action-list" id="action-list"><p style="font-size:0.85rem;color:var(--subtext)">Loading&hellip;</p></div></div>
+      </div>
+      <div>
+        <div class="section-head">Key Deadlines</div>
+        <div class="card"><div class="deadline-list" id="deadline-list"><p style="font-size:0.85rem;color:var(--subtext)">Loading&hellip;</p></div></div>
+      </div>
+    </div>
+
+    <div class="section" id="uni-section">
+      <div class="section-head">University Shortlist</div>
+      <div class="card">
+        <div class="uni-list" id="uni-list"></div>
+        <p style="font-size:0.75rem;color:var(--subtext);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <strong>S</strong> = Safety &nbsp;·&nbsp; <strong>T</strong> = Target &nbsp;·&nbsp; <strong>R</strong> = Reach &nbsp;·&nbsp;
+          Your counselor checks all portals weekly and updates statuses.
+        </p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Document Tracker</div>
+      <div class="card" id="doc-tracker"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Messages from Your Counselor</div>
+      <div class="msg-list" id="msg-list"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Useful Links</div>
+      <div class="card">
+        <div class="resource-grid">
+          <a class="res-link" href="https://inde.campusfrance.org" target="_blank" rel="noopener">🏛️ Campus France India <span class="ext">↗</span></a>
+          <a class="res-link" href="https://visa.vfsglobal.com/ind/en/fra" target="_blank" rel="noopener">🛂 VFS France Visa Portal <span class="ext">↗</span></a>
+          <a class="res-link" href="https://administration-etrangers-en-france.interieur.gouv.fr" target="_blank" rel="noopener">📋 Validate VLS-TS Visa <span class="ext">↗</span></a>
+          <a class="res-link" href="https://in.ambafrance.org" target="_blank" rel="noopener">🇫🇷 French Consulate India <span class="ext">↗</span></a>
+          <a class="res-link" href="https://www.crous-paris.fr" target="_blank" rel="noopener">🏠 CROUS Student Housing <span class="ext">↗</span></a>
+          <a class="res-link" href="https://www.caf.fr" target="_blank" rel="noopener">💶 CAF Housing Allowance <span class="ext">↗</span></a>
+          <a class="res-link" href="https://www.boursobank.com" target="_blank" rel="noopener">🏦 Boursorama Bank <span class="ext">↗</span></a>
+          <a class="res-link" href="https://www.duolingo.com" target="_blank" rel="noopener">🦉 Learn French — Duolingo <span class="ext">↗</span></a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  <strong>VA Consultancy</strong> · Ahmedabad, India · France Visa Specialists<br>
+  <span style="margin-top:4px;display:block;">
+    This portal is maintained by your counselor and updated regularly.
+    Questions? WhatsApp us — we typically respond within 2 hours.
+  </span>
+</footer>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SPREADSHEET_ID = '1KszWRjwXZRFTUGhociNWfQtn4JMaGHA8AgVRgmRn8ng';
+// When SPREADSHEET_ID is the placeholder above, demo mode activates automatically.
+// You can also force it with ?demo=true in the URL.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── DEMO DATA (two sample students) ──────────────────────────────────────────
+const DEMO_DATA = {
+  students: [
+    {
+      student_id: 'priya-s', name: 'Priya Sharma',
+      program: 'MSc Data Science', intake: 'September 2026',
+      enrollment_date: '2026-04-21', current_stage: '9',
+      counselor_name: 'Aditya Jagadeesan', phone: '+919876543210',
+    },
+    {
+      student_id: 'rahul-m', name: 'Rahul Mehta',
+      program: 'MIM Management', intake: 'January 2027',
+      enrollment_date: '2026-05-10', current_stage: '4',
+      counselor_name: 'Aditya Jagadeesan', phone: '+919123456789',
+    },
+  ],
+  documents: [
+    // Priya
+    { student_id:'priya-s', doc_name:'10th Marksheet & Certificate',     category:'academic',       status:'verified',  note:'' },
+    { student_id:'priya-s', doc_name:'12th Marksheet & Certificate',     category:'academic',       status:'verified',  note:'' },
+    { student_id:'priya-s', doc_name:"Bachelor's Degree Certificate",    category:'academic',       status:'submitted', note:'Apostille pending' },
+    { student_id:'priya-s', doc_name:'All Semester Marksheets',          category:'academic',       status:'verified',  note:'' },
+    { student_id:'priya-s', doc_name:'Statement of Purpose (SOP)',       category:'application',    status:'verified',  note:'' },
+    { student_id:'priya-s', doc_name:'Letter of Recommendation × 2',    category:'application',    status:'submitted', note:'' },
+    { student_id:'priya-s', doc_name:'Updated CV / Resume',              category:'application',    status:'verified',  note:'' },
+    { student_id:'priya-s', doc_name:'Passport (valid 2+ years)',        category:'application',    status:'verified',  note:'' },
+    { student_id:'priya-s', doc_name:'Campus France Account Created',    category:'campus_france',  status:'verified',  note:'' },
+    { student_id:'priya-s', doc_name:'CF Dossier Submitted',             category:'campus_france',  status:'submitted', note:'CF number pending' },
+    { student_id:'priya-s', doc_name:'Bank Statement (6 months)',        category:'financial',      status:'needed',    note:'Must show €7,200 minimum' },
+    { student_id:'priya-s', doc_name:'Bank Solvency Certificate',        category:'financial',      status:'needed',    note:'' },
+    { student_id:'priya-s', doc_name:'ITR / Sponsor Financial Docs',     category:'financial',      status:'issue',     note:'ITR for FY2024-25 required — 2023-24 not accepted' },
+    // Rahul
+    { student_id:'rahul-m', doc_name:'10th Marksheet & Certificate',     category:'academic',       status:'submitted', note:'' },
+    { student_id:'rahul-m', doc_name:'12th Marksheet & Certificate',     category:'academic',       status:'submitted', note:'' },
+    { student_id:'rahul-m', doc_name:"Bachelor's Degree Certificate",    category:'academic',       status:'needed',    note:'Will be available after June finals' },
+    { student_id:'rahul-m', doc_name:'Statement of Purpose (SOP)',       category:'application',    status:'needed',    note:'Draft by June 20' },
+    { student_id:'rahul-m', doc_name:'Letter of Recommendation × 2',    category:'application',    status:'needed',    note:'' },
+    { student_id:'rahul-m', doc_name:'Updated CV / Resume',              category:'application',    status:'needed',    note:'' },
+    { student_id:'rahul-m', doc_name:'Passport',                         category:'application',    status:'verified',  note:'' },
+  ],
+  deadlines: [
+    // Priya
+    { student_id:'priya-s', label:'Fix ITR / Financial Docs',           date:'2026-06-10', urgency:'red',   done:'no'  },
+    { student_id:'priya-s', label:'Bank Statement Upload',               date:'2026-06-14', urgency:'amber', done:'no'  },
+    { student_id:'priya-s', label:'Campus France Interview',             date:'2026-06-28', urgency:'amber', done:'no'  },
+    { student_id:'priya-s', label:'VFS Appointment',                     date:'2026-08-05', urgency:'green', done:'no'  },
+    { student_id:'priya-s', label:'10th & 12th Apostille Submitted',     date:'2026-05-30', urgency:'green', done:'yes' },
+    // Rahul
+    { student_id:'rahul-m', label:'Submit university shortlist for review', date:'2026-06-15', urgency:'amber', done:'no'  },
+    { student_id:'rahul-m', label:'Start SOP draft',                        date:'2026-06-25', urgency:'green', done:'no'  },
+    { student_id:'rahul-m', label:'Profile assessment meeting',             date:'2026-05-12', urgency:'green', done:'yes' },
+  ],
+  messages: [
+    // Priya
+    {
+      student_id:'priya-s',
+      message_text:"Great news — your Campus France dossier has been submitted! Your CF reference number will arrive by email within 5 business days.\n\nNext step: I need you to urgently fix the ITR documents — the 2023-24 ITR is not accepted. Please arrange FY2024-25 ITR or a CA-certified income letter by June 10.\n\nI'll send you the Campus France interview prep guide on WhatsApp today.",
+      date:'2026-06-07', pinned:'yes',
+    },
+    {
+      student_id:'priya-s',
+      message_text:"SOP approved and uploaded. All academic documents verified ✅. Well done — we are ahead of schedule! University applications going in this week.",
+      date:'2026-05-22', pinned:'no',
+    },
+    // Rahul
+    {
+      student_id:'rahul-m',
+      message_text:"Welcome to VA Consultancy, Rahul! Your profile assessment is complete.\n\nYour profile is strong for MIM programs in France — target schools are ESSEC, ESCP, and Grenoble EM. I've shared the shortlist document on WhatsApp. Please review and confirm your top 4 choices by June 15 so we can lock in the application strategy.",
+      date:'2026-05-15', pinned:'yes',
+    },
+  ],
+  universities: [
+    // Priya
+    { student_id:'priya-s', university_name:'Université de Bordeaux',     program:'MSc Data & AI',          deadline:'2026-06-30', status:'Applied',        fee:'€3,770/year', tier:'S' },
+    { student_id:'priya-s', university_name:'Université Paris-Saclay',    program:'MSc Data Science',       deadline:'2026-07-15', status:'Applied',        fee:'€3,770/year', tier:'T' },
+    { student_id:'priya-s', university_name:'CentraleSupélec',            program:'MSc Data Science & AI',  deadline:'2026-07-31', status:'Awaiting',       fee:'€3,770/year', tier:'R' },
+    { student_id:'priya-s', university_name:'Université de Lyon 1',       program:'MSc Statistics & ML',    deadline:'2026-06-15', status:'Offer Received', fee:'€3,770/year', tier:'S' },
+    // Rahul
+    { student_id:'rahul-m', university_name:'ESSEC Business School',      program:'MIM Strategy & Management', deadline:'2026-08-01', status:'Not Applied', fee:'€16,500/year', tier:'R' },
+    { student_id:'rahul-m', university_name:'Grenoble École de Management', program:'MIM International Business', deadline:'2026-08-15', status:'Not Applied', fee:'€12,800/year', tier:'T' },
+    { student_id:'rahul-m', university_name:'Toulouse Business School',   program:'MIM Global Management',  deadline:'2026-09-01', status:'Not Applied', fee:'€9,200/year',  tier:'S' },
+  ],
+};
+
+const STAGE_NAMES = [
+  '', // 0 unused
+  'Initial Inquiry', 'Enrolled', 'Profile Assessment', 'University Shortlisting',
+  'Document Collection', 'SOP & LOR Done', 'Applications Submitted',
+  'Campus France Account', 'CF Docs Submitted', 'CF Interview',
+  'CF Process Complete', 'CF Attestation Received', 'Awaiting Offer Letter',
+  'Offer Letter Received', 'Visa Doc Preparation', 'VFS Appointment Booked',
+  'VFS Submitted', 'Visa Processing', 'Visa Approved ✅',
+  'Pre-Departure Prep', 'Pre-Departure Briefing', 'Departed for France ✈️',
+];
+
+const STAGE_SHORT = [
+  '', '01 Inquiry', '02 Enrolled', '03 Profile', '04 Shortlist',
+  '05 Documents', '06 SOP Done', '07 Applied', '08 CF Account',
+  '09 CF Docs', '10 CF Interview', '11 CF Done', '12 Attestation',
+  '13 Offer Wait', '14 Offer Letter', '15 Visa Docs', '16 VFS Booked',
+  '17 VFS Submit', '18 Processing', '19 ✅ Approved', '20 Pre-Depart',
+  '21 Briefing', '22 ✈️ France',
+];
+
+const DOC_CATEGORIES = {
+  academic:      'Academic Documents',
+  application:   'Application Documents',
+  campus_france: 'Campus France',
+  financial:     'Financial Documents',
+};
+
+// ── CSV PARSER ────────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i + 1];
+    if (inQ) {
+      if (c === '"' && n === '"') { field += '"'; i++; }
+      else if (c === '"') { inQ = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQ = true; }
+      else if (c === ',') { row.push(field.trim()); field = ''; }
+      else if (c === '\n' || (c === '\r' && n === '\n')) {
+        if (c === '\r') i++;
+        row.push(field.trim()); lines.push(row); row = []; field = '';
+      } else { field += c; }
+    }
+  }
+  if (field || row.length) { row.push(field.trim()); if (row.some(f => f)) lines.push(row); }
+  if (!lines.length) return [];
+  const headers = lines[0].map(h => h.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''));
+  return lines.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (r[i] || '').trim(); });
+    return obj;
+  }).filter(r => Object.values(r).some(v => v));
+}
+
+// ── SHEET FETCHER ─────────────────────────────────────────────────────────────
+async function fetchSheet(name) {
+  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch sheet "${name}": ${res.status}`);
+  return parseCSV(await res.text());
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function parseDate(s) {
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+function daysUntil(dateStr) {
+  const d = parseDate(dateStr);
+  if (!d) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.round((d - today) / 86400000);
+}
+
+function formatDate(dateStr) {
+  const d = parseDate(dateStr);
+  if (!d) return dateStr;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function initials(name) {
+  return (name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── ERROR / LOADING ───────────────────────────────────────────────────────────
+function showError(title, msg) {
+  document.getElementById('app-loading').style.display = 'none';
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-msg').textContent = msg;
+  document.getElementById('app-error').style.display = '';
+}
+
+// ── RENDERERS ─────────────────────────────────────────────────────────────────
+function renderHero(s) {
+  const stage = parseInt(s.current_stage) || 1;
+  document.getElementById('bc-name').textContent    = s.name;
+  document.getElementById('h-name').textContent     = s.name;
+  document.getElementById('h-program').textContent  = s.program;
+  document.getElementById('h-intake').textContent   = s.intake;
+  document.getElementById('h-stage-name').textContent = STAGE_NAMES[stage] || `Stage ${stage}`;
+  document.getElementById('h-stage-sub').textContent  = `Stage ${stage} of 22 · Updated today`;
+  document.title = `${s.name} — France Journey Tracker | VA Consultancy`;
+}
+
+function renderStats(s, docs, deadlines) {
+  const stage = parseInt(s.current_stage) || 1;
+  document.getElementById('s-stage').textContent = String(stage).padStart(2, '0');
+
+  const enroll = parseDate(s.enrollment_date);
+  if (enroll) {
+    const days = Math.round((Date.now() - enroll) / 86400000);
+    document.getElementById('s-days').textContent = days;
+  } else {
+    document.getElementById('s-days').textContent = '—';
+  }
+
+  const submitted = docs.filter(d => d.status === 'submitted' || d.status === 'verified').length;
+  document.getElementById('s-docs').textContent = submitted;
+
+  const vfs = deadlines.find(d => /vfs/i.test(d.label) && d.done !== 'yes');
+  if (vfs) {
+    const days = daysUntil(vfs.date);
+    document.getElementById('s-vfs').textContent = days !== null ? (days <= 0 ? 'Done' : days) : '—';
+  } else {
+    document.getElementById('s-vfs').textContent = '—';
+  }
+}
+
+function renderCounselor(s) {
+  document.getElementById('c-avatar').textContent = initials(s.counselor_name);
+  document.getElementById('c-name').textContent   = s.counselor_name;
+  if (s.phone) {
+    const num = s.phone.replace(/\D/g, '');
+    document.getElementById('c-whatsapp').href = `https://wa.me/${num}`;
+  }
+}
+
+function renderJourney(stage) {
+  const pct = Math.round(((stage - 1) / 21) * 100);
+  document.getElementById('prog-pct').textContent = `${pct}% Complete — Stage ${stage} of 22`;
+  setTimeout(() => { document.getElementById('bar-fill').style.width = pct + '%'; }, 200);
+
+  const row = document.getElementById('stages-row');
+  row.innerHTML = STAGE_SHORT.slice(1).map((label, i) => {
+    const n = i + 1;
+    const cls = n < stage ? 'pill-done' : n === stage ? 'pill-active' : 'pill-next';
+    const prefix = n < stage ? '✓ ' : n === stage ? '▶ ' : '';
+    return `<span class="pill ${cls}">${prefix}${esc(label)}</span>`;
+  }).join('');
+}
+
+function renderActionItems(docs, deadlines) {
+  const items = [];
+
+  // Urgent docs (issue or needed that are high-priority)
+  docs.filter(d => d.status === 'issue').forEach(d => {
+    items.push({ urgent: true, text: `Fix issue: ${d.doc_name}${d.note ? ' — ' + d.note : ''}`, tag: 'Urgent' });
+  });
+
+  // Red deadlines as action items
+  deadlines.filter(d => d.urgency === 'red' && d.done !== 'yes').forEach(d => {
+    const days = daysUntil(d.date);
+    const label = days !== null ? `Due in ${days} day${days !== 1 ? 's' : ''}` : 'Urgent';
+    items.push({ urgent: true, text: d.label, tag: label });
+  });
+
+  // Amber deadlines
+  deadlines.filter(d => d.urgency === 'amber' && d.done !== 'yes').forEach(d => {
+    items.push({ urgent: false, text: d.label, tag: 'This Week' });
+  });
+
+  // Done items (show last 2)
+  deadlines.filter(d => d.done === 'yes').slice(-2).forEach(d => {
+    items.push({ done: true, text: d.label, tag: 'Done' });
+  });
+
+  if (!items.length) {
+    document.getElementById('action-list').innerHTML = '<p style="font-size:0.85rem;color:var(--subtext)">No pending action items.</p>';
+    return;
+  }
+
+  document.getElementById('action-list').innerHTML = items.map(item => {
+    if (item.done) {
+      return `<div class="action-item done">
+        <div class="chk chk-done" onclick="toggleChk(this)">✓</div>
+        <div class="action-text">${esc(item.text)}</div>
+        <span class="tag tag-green">Done</span>
+      </div>`;
+    }
+    const urgent = item.urgent;
+    return `<div class="action-item${urgent ? ' urgent' : ''}">
+      <div class="chk${urgent ? ' chk-urgent' : ''}" onclick="toggleChk(this)"></div>
+      <div class="action-text">${esc(item.text)}</div>
+      <span class="tag ${urgent ? 'tag-red' : 'tag-amber'}">${esc(item.tag)}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderDeadlines(deadlines) {
+  if (!deadlines.length) {
+    document.getElementById('deadline-list').innerHTML = '<p style="font-size:0.85rem;color:var(--subtext)">No deadlines added yet.</p>';
+    return;
+  }
+
+  const sorted = [...deadlines].sort((a, b) => {
+    const da = parseDate(a.date), db = parseDate(b.date);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da - db;
+  });
+
+  document.getElementById('deadline-list').innerHTML = sorted.map(d => {
+    const days = daysUntil(d.date);
+    const isDone = d.done === 'yes';
+    let cls = 'dl-green', daysTxt = '';
+    if (isDone) {
+      cls = 'dl-done'; daysTxt = 'Done';
+    } else if (d.urgency === 'red')   { cls = 'dl-red';   daysTxt = days !== null ? `${days}d` : 'Overdue'; }
+    else if (d.urgency === 'amber')   { cls = 'dl-amber'; daysTxt = days !== null ? `${days}d` : ''; }
+    else                               { daysTxt = days !== null ? `${days}d` : ''; }
+
+    const color = isDone ? 'var(--gray-400)' : d.urgency === 'red' ? 'var(--red)' : d.urgency === 'amber' ? 'var(--amber)' : 'var(--green)';
+    return `<div class="dl-row ${cls}">
+      <span class="dl-icon">📅</span>
+      <div class="dl-info">
+        <div class="dl-name">${esc(d.label)}</div>
+        <div class="dl-date">${formatDate(d.date)}</div>
+      </div>
+      <div class="dl-days" style="color:${color}">${esc(daysTxt)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderUniversities(universities) {
+  const section = document.getElementById('uni-section');
+  if (!universities.length) { section.style.display = 'none'; return; }
+
+  const statusClass = {
+    'Applied': 'us-applied', 'Awaiting': 'us-awaiting', 'Not Applied': 'us-pending',
+    'Offer Received': 'us-offer', 'Rejected': 'us-rejected',
+  };
+  const tierClass = { 'S': 'badge-s', 'T': 'badge-t', 'R': 'badge-r' };
+
+  document.getElementById('uni-list').innerHTML = universities.map(u => {
+    const sc = statusClass[u.status] || 'us-pending';
+    const tc = tierClass[u.tier] || 'badge-t';
+    return `<div class="uni-row">
+      <div class="uni-badge ${tc}">${esc(u.tier)}</div>
+      <div class="uni-info">
+        <div class="uni-name">${esc(u.university_name)}</div>
+        <div class="uni-prog">${esc(u.program)}</div>
+        <div class="uni-dl">Deadline: ${formatDate(u.deadline)}</div>
+      </div>
+      <div class="uni-right">
+        <span class="u-status ${sc}">${esc(u.status)}</span>
+        <span class="u-fee">${esc(u.fee)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDocuments(docs) {
+  const tracker = document.getElementById('doc-tracker');
+  if (!docs.length) {
+    tracker.innerHTML = '<p style="font-size:0.85rem;color:var(--subtext)">Documents will appear here as they are submitted.</p>';
+    return;
+  }
+
+  const byCategory = {};
+  docs.forEach(d => {
+    const cat = d.category || 'other';
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(d);
+  });
+
+  const statusClass = { verified: 'ds-verified', submitted: 'ds-submitted', needed: 'ds-needed', issue: 'ds-issue' };
+  const statusLabel = { verified: '✓ Verified', submitted: 'Submitted', needed: 'Needed', issue: '⚠ Issue' };
+
+  const order = ['academic', 'application', 'campus_france', 'financial'];
+  const cats = [...new Set([...order, ...Object.keys(byCategory)])].filter(c => byCategory[c]);
+
+  tracker.innerHTML = cats.map(cat => {
+    const label = DOC_CATEGORIES[cat] || cat;
+    const rows = byCategory[cat].map(d => {
+      const sc = statusClass[d.status] || 'ds-needed';
+      const sl = statusLabel[d.status] || d.status;
+      return `<div class="doc-row">
+        <span class="doc-name">${esc(d.doc_name)}</span>
+        <span class="doc-status ${sc}">${sl}</span>
+      </div>`;
+    }).join('');
+    return `<div class="doc-section">
+      <div class="doc-section-label">${esc(label)}</div>
+      <div class="doc-list">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderMessages(messages, counselorName) {
+  const from = counselorName || 'Your Counselor';
+  const list = document.getElementById('msg-list');
+  if (!messages.length) {
+    list.innerHTML = '<div class="card"><p style="font-size:0.85rem;color:var(--subtext)">No messages yet.</p></div>';
+    return;
+  }
+
+  const sorted = [...messages].sort((a, b) => {
+    const da = parseDate(a.date), db = parseDate(b.date);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return db - da;
+  });
+
+  list.innerHTML = sorted.map((m, i) => {
+    const isPinned = m.pinned === 'yes' || i === 0;
+    const pinTag = isPinned ? ` <span class="pin-tag">📌 Latest</span>` : '';
+    return `<div class="msg-item${isPinned ? ' msg-pinned' : ''}">
+      <div class="msg-header">
+        <div class="msg-from">🧑‍💼 ${esc(from)}${pinTag}</div>
+        <div class="msg-date">${formatDate(m.date)}</div>
+      </div>
+      <div class="msg-body">${m.message_text.replace(/\n/g, '<br>')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── TOGGLE CHECKLIST ──────────────────────────────────────────────────────────
+function toggleChk(el) {
+  const item = el.closest('.action-item');
+  if (el.classList.contains('chk-done')) {
+    el.classList.remove('chk-done'); el.textContent = ''; item.classList.remove('done');
+  } else {
+    el.classList.add('chk-done'); el.textContent = '✓'; item.classList.add('done');
+  }
+}
+
+// ── BANNERS ───────────────────────────────────────────────────────────────────
+function showDemoBanner(reason) {
+  const banner = document.createElement('div');
+  banner.style.cssText = 'background:#fffbeb;border-bottom:2px solid #fde68a;padding:9px 1.5rem;font-size:0.8rem;font-weight:600;color:#92400e;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;';
+  const msg = reason === 'sheet-not-ready'
+    ? `⏳ Google Sheet not shared yet — showing sample data. <a href="https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit" target="_blank" style="color:#b45309;text-decoration:underline;">Open sheet →</a> share as Anyone with link → Viewer, then refresh.`
+    : `🟡 Demo mode — showing sample data for <strong>2 students</strong>. Connect your Google Sheet to go live.`;
+  banner.innerHTML = `<span>${msg}</span><span style="font-weight:400;color:#78350f;">Also try: <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;">?student=rahul-m</code></span>`;
+  document.querySelector('nav').after(banner);
+}
+
+// ── RENDER ENTRY POINT ────────────────────────────────────────────────────────
+function renderPortal(student, docs, deadlines, messages, universities) {
+  document.getElementById('app-loading').style.display = 'none';
+  document.getElementById('app-content').style.display = '';
+  const stage = parseInt(student.current_stage) || 1;
+  renderHero(student);
+  renderStats(student, docs, deadlines);
+  renderCounselor(student);
+  renderJourney(stage);
+  renderActionItems(docs, deadlines);
+  renderDeadlines(deadlines);
+  renderUniversities(universities);
+  renderDocuments(docs);
+  renderMessages(messages, student.counselor_name);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const params    = new URLSearchParams(window.location.search);
+  const studentId = params.get('student') || params.get('id');
+  const isDemo    = SPREADSHEET_ID === 'YOUR_SPREADSHEET_ID_HERE' || params.get('demo') === 'true';
+
+  const id = studentId || 'priya-s';
+
+  // ── Pure demo mode (no Sheet ID) ─────────────────────────────────────────
+  if (isDemo) {
+    const student = DEMO_DATA.students.find(s => s.student_id === id);
+    if (!student) {
+      showError('Student not found', `"${id}" not in demo data. Try ?student=priya-s or ?student=rahul-m`);
+      return;
+    }
+    showDemoBanner('demo');
+    renderPortal(
+      student,
+      DEMO_DATA.documents.filter(d => d.student_id === id),
+      DEMO_DATA.deadlines.filter(d => d.student_id === id),
+      DEMO_DATA.messages.filter(m => m.student_id === id),
+      DEMO_DATA.universities.filter(u => u.student_id === id),
+    );
+    return;
+  }
+
+  // ── Live mode (Google Sheet) — fall back to demo if sheet not ready ───────
+  function fallbackToDemo(reason) {
+    const student = DEMO_DATA.students.find(s => s.student_id === id) || DEMO_DATA.students[0];
+    showDemoBanner(reason);
+    renderPortal(
+      student,
+      DEMO_DATA.documents.filter(d => d.student_id === student.student_id),
+      DEMO_DATA.deadlines.filter(d => d.student_id === student.student_id),
+      DEMO_DATA.messages.filter(m => m.student_id === student.student_id),
+      DEMO_DATA.universities.filter(u => u.student_id === student.student_id),
+    );
+  }
+
+  try {
+    const [students, docs, deadlines, messages, universities] = await Promise.all([
+      fetchSheet('Students'), fetchSheet('Documents'), fetchSheet('Deadlines'),
+      fetchSheet('Messages'),  fetchSheet('Universities'),
+    ]);
+
+    // Sheet fetched but has no student rows yet — fall back to demo
+    if (!students.length) { fallbackToDemo('sheet-not-ready'); return; }
+
+    const student = students.find(s => s.student_id === id);
+    if (!student) {
+      // Student ID not in sheet yet — fall back to demo with banner
+      fallbackToDemo('sheet-not-ready');
+      return;
+    }
+
+    renderPortal(
+      student,
+      docs.filter(d => d.student_id === id),
+      deadlines.filter(d => d.student_id === id),
+      messages.filter(m => m.student_id === id),
+      universities.filter(u => u.student_id === id),
+    );
+
+  } catch (err) {
+    // Sheet not shared yet or network error — fall back to demo silently
+    console.warn('Sheet fetch failed, using demo data:', err.message);
+    fallbackToDemo('sheet-not-ready');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

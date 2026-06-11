@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VA Consultancy — Live Demo</title>
+  <meta name="description" content="See exactly how VA Consultancy tracks your France visa journey in real time." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #2563eb; --blue-lt: #eff6ff; --blue-dk: #1d4ed8;
+      --green: #16a34a; --green-lt: #f0fdf4;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+      --gray-700: #374151; --gray-900: #111827;
+      --border: #e5e7eb; --subtext: #6b7280;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--gray-50); color: var(--gray-900); line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+    .nav-brand .accent { color: var(--blue); }
+    .live-badge {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--green-lt); border: 1px solid #bbf7d0;
+      color: var(--green); padding: 4px 12px; border-radius: 100px;
+      font-size: 0.75rem; font-weight: 700;
+    }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+      padding: 4rem 2rem 3.5rem; text-align: center; color: #fff;
+    }
+    .hero-eyebrow {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #93c5fd; margin-bottom: 1rem;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after { content: ''; flex: 1; max-width: 40px; height: 1px; background: #93c5fd; opacity: 0.5; }
+    h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 1rem; }
+    h1 span { color: #fde68a; }
+    .hero-sub { font-size: 1.1rem; color: #bfdbfe; max-width: 500px; margin: 0 auto 2rem; }
+    .hero-badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+      color: #fff; padding: 5px 14px; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 600; backdrop-filter: blur(4px);
+    }
+
+    /* MAIN */
+    .main { max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+    /* SECTION LABEL */
+    .section-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--subtext);
+      text-align: center; margin-bottom: 1.5rem;
+    }
+
+    /* DEMO CARDS */
+    .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    @media (max-width: 600px) { .demo-grid { grid-template-columns: 1fr; } }
+
+    .demo-card {
+      background: #fff; border: 1.5px solid var(--border); border-radius: 16px;
+      overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; cursor: pointer;
+      text-decoration: none; display: flex; flex-direction: column;
+    }
+    .demo-card:hover { border-color: var(--blue); box-shadow: 0 8px 24px rgba(37,99,235,0.14); text-decoration: none; }
+
+    .card-preview {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 1.25rem 1.25rem;
+      position: relative; overflow: hidden;
+    }
+    .card-preview::after {
+      content: ''; position: absolute; right: -20px; bottom: -20px;
+      width: 100px; height: 100px; border-radius: 50%;
+      background: rgba(37,99,235,0.08);
+    }
+    .preview-stage {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--blue); color: #fff;
+      padding: 4px 12px; border-radius: 100px;
+      font-size: 0.72rem; font-weight: 700; margin-bottom: 10px;
+    }
+    .preview-name { font-size: 1.1rem; font-weight: 800; color: var(--gray-900); }
+    .preview-meta { font-size: 0.78rem; color: var(--subtext); margin-top: 2px; }
+    .preview-bar { margin-top: 12px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--subtext); margin-bottom: 4px; }
+    .bar-track { background: rgba(37,99,235,0.12); border-radius: 100px; height: 6px; }
+    .bar-fill { height: 100%; border-radius: 100px; background: var(--blue); }
+    .preview-tag {
+      display: inline-block; margin-top: 10px;
+      font-size: 0.67rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 100px; border: 1px solid #fecaca;
+      background: #fef2f2; color: #dc2626;
+    }
+    .preview-tag.amber { border-color: #fde68a; background: #fffbeb; color: #d97706; }
+    .preview-tag.green { border-color: #bbf7d0; background: #f0fdf4; color: #16a34a; }
+
+    .card-body { padding: 1rem 1.25rem 1.25rem; flex: 1; display: flex; flex-direction: column; }
+    .card-title { font-size: 0.9rem; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+    .card-desc { font-size: 0.8rem; color: var(--subtext); flex: 1; }
+    .card-cta {
+      margin-top: 1rem; display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.8rem; font-weight: 700; color: var(--blue);
+    }
+    .card-cta span { font-size: 1rem; }
+
+    /* CONSULTANT CARD */
+    .consultant-card {
+      background: #fff; border: 1.5px solid var(--border); border-radius: 16px;
+      overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; cursor: pointer;
+      text-decoration: none; display: block;
+    }
+    .consultant-card:hover { border-color: var(--blue); box-shadow: 0 8px 24px rgba(37,99,235,0.14); text-decoration: none; }
+    .consultant-preview {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      padding: 1.5rem; display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
+    }
+    .mini-card {
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px; padding: 10px 14px; min-width: 130px;
+    }
+    .mini-card-name { font-size: 0.82rem; font-weight: 700; color: #fff; }
+    .mini-card-meta { font-size: 0.68rem; color: #bfdbfe; margin-top: 1px; }
+    .mini-bar { background: rgba(255,255,255,0.15); border-radius: 100px; height: 4px; margin-top: 8px; overflow: hidden; }
+    .mini-bar-fill { height: 100%; border-radius: 100px; background: #fde68a; }
+    .mini-urgent { font-size: 0.65rem; font-weight: 700; color: #fca5a5; margin-top: 5px; }
+    .consultant-body { padding: 1rem 1.25rem 1.25rem; display: flex; align-items: center; gap: 1rem; }
+    .consultant-body-info { flex: 1; }
+    .consultant-body-title { font-size: 0.9rem; font-weight: 700; color: var(--gray-900); }
+    .consultant-body-desc { font-size: 0.8rem; color: var(--subtext); margin-top: 3px; }
+    .consultant-cta { font-size: 0.8rem; font-weight: 700; color: var(--blue); white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+
+    /* PITCH STRIP */
+    .pitch-strip {
+      margin: 2.5rem 0;
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.75rem 1.5rem;
+    }
+    .pitch-title { font-size: 1rem; font-weight: 800; color: var(--gray-900); margin-bottom: 1rem; }
+    .pitch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+    .pitch-item { display: flex; align-items: flex-start; gap: 10px; }
+    .pitch-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .pitch-text { font-size: 0.82rem; }
+    .pitch-text strong { display: block; color: var(--gray-900); font-weight: 700; }
+    .pitch-text span { color: var(--subtext); }
+
+    /* CTA */
+    .cta-section { text-align: center; padding: 2rem 0 0; }
+    .cta-label { font-size: 0.8rem; color: var(--subtext); margin-bottom: 0.75rem; }
+    .cta-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--blue); color: #fff; padding: 13px 28px; border-radius: 10px;
+      font-size: 0.9rem; font-weight: 700; text-decoration: none;
+      transition: background 0.15s;
+    }
+    .cta-btn:hover { background: var(--blue-dk); text-decoration: none; }
+
+    footer {
+      border-top: 1px solid var(--border); background: #fff;
+      padding: 1.5rem; text-align: center; font-size: 0.78rem; color: var(--subtext);
+    }
+    footer strong { color: var(--blue); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">🇫🇷 <span class="accent">VA</span> Consultancy</div>
+  <div class="live-badge"><span class="live-dot"></span> Live Demo</div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">France Visa Specialists · Ahmedabad</div>
+  <h1>Your visa journey,<br><span>tracked in real time</span></h1>
+  <p class="hero-sub">From the day you enroll to the day you land in France — every stage, every document, every deadline. Visible to you 24/7.</p>
+  <div class="hero-badges">
+    <div class="badge">🇫🇷 France Specialists</div>
+    <div class="badge">📋 22-Stage Process</div>
+    <div class="badge">📡 Live Tracking</div>
+    <div class="badge">💬 WhatsApp at Every Stage</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="section-label">Click any portal below to explore ↓</div>
+
+  <div class="demo-grid">
+
+    <!-- Priya -->
+    <a class="demo-card" href="index.html?student=priya-s" target="_blank">
+      <div class="card-preview">
+        <div class="preview-stage">▶ Stage 9 / 22</div>
+        <div class="preview-name">Priya Sharma</div>
+        <div class="preview-meta">MSc Data Science · September 2026</div>
+        <div class="preview-bar">
+          <div class="bar-label"><span>CF Docs Submitted</span><span>41%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:41%"></div></div>
+        </div>
+        <div class="preview-tag">⚠ ITR docs — action needed</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Student Portal — Priya Sharma</div>
+        <div class="card-desc">Mid-journey. Campus France process active, financial documents flagged. See document tracker, university shortlist, and counselor messages.</div>
+        <div class="card-cta">View Priya's Portal <span>→</span></div>
+      </div>
+    </a>
+
+    <!-- Rahul -->
+    <a class="demo-card" href="index.html?student=rahul-m" target="_blank">
+      <div class="card-preview">
+        <div class="preview-stage">▶ Stage 4 / 22</div>
+        <div class="preview-name">Rahul Mehta</div>
+        <div class="preview-meta">MIM Management · January 2027</div>
+        <div class="preview-bar">
+          <div class="bar-label"><span>University Shortlisting</span><span>14%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:14%"></div></div>
+        </div>
+        <div class="preview-tag amber">📋 Shortlist due June 15</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Student Portal — Rahul Mehta</div>
+        <div class="card-desc">Early stage. University shortlist being finalised. Compare how the same portal looks for a student 5 stages behind Priya.</div>
+        <div class="card-cta">View Rahul's Portal <span>→</span></div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Consultant Card -->
+  <a class="consultant-card" href="consultant.html" target="_blank">
+    <div class="consultant-preview">
+      <div class="mini-card">
+        <div class="mini-card-name">Priya Sharma</div>
+        <div class="mini-card-meta">MSc Data Sci · Stage 9</div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:41%"></div></div>
+        <div class="mini-urgent">🔴 ITR issue</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-name">Rahul Mehta</div>
+        <div class="mini-card-meta">MIM Mgmt · Stage 4</div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:14%"></div></div>
+        <div class="mini-urgent" style="color:#fde68a;">🟡 Shortlist due</div>
+      </div>
+      <div class="mini-card" style="background:rgba(255,255,255,0.06); border-style:dashed;">
+        <div class="mini-card-name" style="color:#93c5fd;">+ Add student</div>
+        <div class="mini-card-meta">Add a row to the<br>Google Sheet</div>
+      </div>
+    </div>
+    <div class="consultant-body">
+      <div class="consultant-body-info">
+        <div class="consultant-body-title">Consultant Dashboard</div>
+        <div class="consultant-body-desc">All students at a glance — urgency-sorted, stage progress, next deadlines, copy portal links, WhatsApp direct.</div>
+      </div>
+      <div class="consultant-cta">Open Dashboard <span>→</span></div>
+    </div>
+  </a>
+
+  <div class="pitch-strip">
+    <div class="pitch-title">Why this beats every other consultancy in Ahmedabad</div>
+    <div class="pitch-grid">
+      <div class="pitch-item">
+        <span class="pitch-icon">📡</span>
+        <div class="pitch-text">
+          <strong>Real-time tracking</strong>
+          <span>Students check their portal any time — no "what's happening?" calls</span>
+        </div>
+      </div>
+      <div class="pitch-item">
+        <span class="pitch-icon">📋</span>
+        <div class="pitch-text">
+          <strong>22-stage France process</strong>
+          <span>Every stage documented. Students see exactly where they are</span>
+        </div>
+      </div>
+      <div class="pitch-item">
+        <span class="pitch-icon">📁</span>
+        <div class="pitch-text">
+          <strong>Document tracker</strong>
+          <span>Every doc: needed → submitted → verified. Issues flagged early</span>
+        </div>
+      </div>
+      <div class="pitch-item">
+        <span class="pitch-icon">🏫</span>
+        <div class="pitch-text">
+          <strong>University shortlist</strong>
+          <span>S / T / R tier breakdown, application status, fee per year</span>
+        </div>
+      </div>
+      <div class="pitch-item">
+        <span class="pitch-icon">⚡</span>
+        <div class="pitch-text">
+          <strong>Zero extra work</strong>
+          <span>Consultant updates one Google Sheet. Portal updates instantly</span>
+        </div>
+      </div>
+      <div class="pitch-item">
+        <span class="pitch-icon">🇫🇷</span>
+        <div class="pitch-text">
+          <strong>France-only specialists</strong>
+          <span>Not 15 countries. One process. Done perfectly</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-section">
+    <div class="cta-label">Ready to start your France journey?</div>
+    <a class="cta-btn" href="https://wa.me/919876543210" target="_blank" rel="noopener">
+      💬 WhatsApp us for a free profile assessment
+    </a>
+    <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--subtext);">
+      Typically respond within 2 hours · Ahmedabad, India
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>VA Consultancy</strong> · Ahmedabad, India · France Visa Specialists<br>
+  <span style="display:block;margin-top:4px;">This is a live demo. Student data shown is for illustration only.</span>
+</footer>
+
+</body>
+</html>

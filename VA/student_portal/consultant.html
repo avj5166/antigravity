@@ -96,7 +96,14 @@
 
     .main { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; }
 
-    .filter-row { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; }
+    .filter-row { display: flex; gap: 8px; margin-bottom: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .search-row { margin-bottom: 1rem; }
+    .search-input {
+      width: 100%; padding: 7px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.85rem; color: var(--text); background: #fff;
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
     .filter-label { font-size: 0.78rem; color: var(--subtext); font-weight: 600; margin-right: 4px; }
     .filter-chip {
       padding: 4px 12px; border: 1px solid var(--border); border-radius: 100px;
@@ -116,7 +123,7 @@
       background: #fff; border: 1px solid var(--border); border-radius: 12px;
       padding: 1.1rem; transition: border-color 0.15s, box-shadow 0.15s;
       display: flex; flex-direction: column; gap: 0.85rem;
-      cursor: pointer;
+      cursor: pointer; text-decoration: none;
     }
     .student-card:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(37,99,235,0.12); }
     .student-card.has-urgent { border-left: 3px solid var(--red); }
@@ -221,8 +228,16 @@
 
   <div class="page-header">
     <div class="page-header-inner">
-      <div class="page-title">Consultant Dashboard</div>
-      <div class="page-subtitle">All students · VA Consultancy, Ahmedabad · France Visa Specialists</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div>
+          <div class="page-title">Consultant Dashboard</div>
+          <div class="page-subtitle">All students · VA Consultancy, Ahmedabad · France Visa Specialists</div>
+        </div>
+        <a href="#" id="edit-sheet-link" target="_blank"
+           style="font-size:0.78rem;font-weight:600;color:var(--blue);border:1px solid var(--blue-md);background:var(--blue-lt);padding:5px 12px;border-radius:7px;white-space:nowrap;text-decoration:none;">
+          ✏️ Edit Sheet
+        </a>
+      </div>
       <div class="summary-bar" id="summary-bar">
         <div class="sum-item"><div class="sum-val" id="s-total">0</div><div class="sum-label">Active Students</div></div>
         <div class="sum-item"><div class="sum-val red" id="s-urgent">0</div><div class="sum-label">Urgent Today</div></div>
@@ -234,6 +249,9 @@
   </div>
 
   <div class="main">
+    <div class="search-row">
+      <input class="search-input" id="search-input" type="search" placeholder="Search by name or program…" oninput="applySearch(this.value)" />
+    </div>
     <div class="filter-row" id="filter-row">
       <span class="filter-label">Filter:</span>
       <button class="filter-chip active" data-filter="all" onclick="applyFilter(this,'all')">All Students</button>
@@ -364,6 +382,7 @@ let allStudents = [];
 let allDeadlines = [];
 let currentFilter = 'all';
 let currentSort = 'urgency';
+let currentSearch = '';
 
 // ── COMPUTE URGENCY ───────────────────────────────────────────────────────────
 function getStudentUrgency(studentId) {
@@ -412,13 +431,26 @@ function renderCard(s) {
   const nextDl  = getNextDeadline(s.student_id);
   const url     = portalUrl(s.student_id);
 
+  // Count all unresolved urgent items for "+N more" badge
+  const pendingDls = allDeadlines.filter(d => d.student_id === s.student_id && d.done !== 'yes');
+  const redCount   = pendingDls.filter(d => d.urgency === 'red').length;
+  const amberCount = pendingDls.filter(d => d.urgency === 'amber').length;
+
   let dlHtml = '';
   if (nextDl) {
     const days = daysUntil(nextDl.date);
     let cls = 'none', icon = '✅', txt = 'All on track';
-    if (urgency === 'red')   { cls = 'red';   icon = '🔴'; txt = `${esc(nextDl.label)} — ${days !== null ? days + 'd' : 'overdue'}`; }
-    else if (urgency === 'amber') { cls = 'amber'; icon = '🟡'; txt = `${esc(nextDl.label)} — ${days !== null ? days + 'd' : ''}`; }
-    else { txt = `Next: ${esc(nextDl.label)}`; }
+    if (urgency === 'red') {
+      cls = 'red'; icon = '🔴';
+      const extra = redCount > 1 ? ` <span style="opacity:0.75">(+${redCount - 1} more)</span>` : '';
+      txt = `${esc(nextDl.label)} — ${days !== null ? (days <= 0 ? `${Math.abs(days)}d overdue` : days + 'd') : 'overdue'}${extra}`;
+    } else if (urgency === 'amber') {
+      cls = 'amber'; icon = '🟡';
+      const extra = amberCount > 1 ? ` <span style="opacity:0.75">(+${amberCount - 1} more)</span>` : '';
+      txt = `${esc(nextDl.label)} — ${days !== null ? days + 'd' : ''}${extra}`;
+    } else {
+      txt = `Next: ${esc(nextDl.label)}`;
+    }
     dlHtml = `<div class="dl-urgent ${cls}">${icon} ${txt}</div>`;
   } else {
     dlHtml = `<div class="dl-urgent none">✅ No pending deadlines</div>`;
@@ -427,14 +459,15 @@ function renderCard(s) {
   const borderClass = urgency === 'red' ? 'has-urgent' : urgency === 'amber' ? 'has-amber' : '';
 
   return `
-  <div class="student-card ${borderClass}" data-urgency="${urgency}" data-stage="${stage}" data-name="${esc(s.name)}" data-enrollment="${s.enrollment_date || ''}">
+  <div class="student-card ${borderClass}" data-urgency="${urgency}" data-stage="${stage}" data-name="${esc(s.name)}" data-enrollment="${s.enrollment_date || ''}"
+       onclick="window.open('${url}', '_blank')" role="link" aria-label="Open ${esc(s.name)}'s portal">
     <div class="card-header">
       <div class="card-avatar">${initials(s.name)}</div>
       <div class="card-info">
         <div class="card-name">${esc(s.name)}</div>
         <div class="card-meta">${esc(s.program)} · ${esc(s.intake)}</div>
       </div>
-      <div class="stage-chip">${stage}/22</div>
+      <div class="stage-chip" title="${esc(stageName)}">${stage}/22</div>
     </div>
 
     <div class="card-progress">
@@ -448,9 +481,9 @@ function renderCard(s) {
     <div class="card-deadline">${dlHtml}</div>
 
     <div class="card-actions">
-      <a class="btn-portal" href="${url}" target="_blank">Open Portal →</a>
+      <a class="btn-portal" href="${url}" target="_blank" onclick="event.stopPropagation()">Open Portal →</a>
       <button class="btn-copy" onclick="copyPortalLink(event, '${esc(s.student_id)}')">🔗 Copy Link</button>
-      ${s.phone ? `<a class="btn-wa" href="https://wa.me/${s.phone.replace(/\D/g,'')}" target="_blank">💬</a>` : ''}
+      ${s.phone ? `<a class="btn-wa" href="https://wa.me/${s.phone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" title="WhatsApp ${esc(s.name)}">💬 WA</a>` : ''}
     </div>
   </div>`;
 }
@@ -480,8 +513,20 @@ function applySort(sort) {
   renderGrid();
 }
 
+function applySearch(query) {
+  currentSearch = query.trim().toLowerCase();
+  renderGrid();
+}
+
 function renderGrid() {
   let students = [...allStudents];
+
+  if (currentSearch) {
+    students = students.filter(s =>
+      (s.name || '').toLowerCase().includes(currentSearch) ||
+      (s.program || '').toLowerCase().includes(currentSearch)
+    );
+  }
 
   if (currentFilter === 'urgent') {
     students = students.filter(s => getStudentUrgency(s.student_id) === 'red');
@@ -573,7 +618,11 @@ async function init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  const link = document.getElementById('edit-sheet-link');
+  if (link) link.href = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`;
+  init();
+});
 </script>
 
 </body>
